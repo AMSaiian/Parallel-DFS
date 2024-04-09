@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parallel-DFS", "Parallel-DFS\Parallel-DFS.csproj", "{A938184E-D961-41D7-B23A-339EEEE488C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelDfs", "ParallelDfs\ParallelDfs.csproj", "{A938184E-D961-41D7-B23A-339EEEE488C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
