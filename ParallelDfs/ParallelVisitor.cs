@@ -2,45 +2,43 @@
 
 namespace ParallelDfs;
 
-public class ParallelVisitor(int workerDepthLimit) : IVisitor
+public class ParallelVisitor(int workerDepthLimit) 
 {
     private volatile int _visitedCount;
 
     private readonly int _workerDepthLimit = workerDepthLimit;
 
+    private volatile bool _found;
+
     public Node? FindNodeOrDefault(Tree tree, int nodeValue)
     {
-        CancellationTokenSource cts = new();
-        CancellationToken ct = cts.Token;
-        Node? result = ProcessSubTree(nodeValue, workerDepthLimit, ct, tree.Root!);
-        cts.Cancel();
+        Node? result = ProcessSubTree(nodeValue, workerDepthLimit, tree.Root!);
         return result;
     }
     
-    private Node? ProcessSubTree(int nodeValue, int depthThreshold, CancellationToken outCt, params Node[] subRoot)
+    private Node? ProcessSubTree(int nodeValue, int depthThreshold, params Node[] subRoot)
     {
-        using CancellationTokenSource cts = new();
-        CancellationToken innerCt = cts.Token;
-        
         Stack<Node> searchStack = new();
-        foreach (Node node in subRoot)
-            searchStack.Push(node);
+        
+        for (int i = subRoot.Length - 1; i > -1; i--)
+            searchStack.Push(subRoot[i]);
         
         int nextWorkerDepthThreshold = depthThreshold + _workerDepthLimit;
         List<Task<Node?>> childrenTasks = new();
-        List<Node> overThresholdNodes = new();
         
         while (searchStack.Count > 0)
         {
-            if (outCt.IsCancellationRequested)
-                return default;
+            if (_found)
+                return null;
             
             Node currentNode = searchStack.Pop();
             Interlocked.Increment(ref _visitedCount);
+            List<Node> overThresholdNodes = new();
 
             if (currentNode.Value == nodeValue)
             {
-                cts.Cancel();
+                Console.WriteLine(currentNode.Value);
+                _found = true;
                 return currentNode;
             }
             
@@ -56,11 +54,9 @@ public class ParallelVisitor(int workerDepthLimit) : IVisitor
 
             if (overThresholdNodes.Count > 0)
             {
-                childrenTasks.Add(Task.Run(() => 
-                                            ProcessSubTree(nodeValue, 
-                                                           nextWorkerDepthThreshold,
-                                                           innerCt,
-                                                           overThresholdNodes.ToArray()), innerCt));
+                childrenTasks.Add(Task.Run(() => ProcessSubTree(nodeValue, 
+                                                                nextWorkerDepthThreshold,
+                                                                overThresholdNodes.ToArray())));
             }
         }
         

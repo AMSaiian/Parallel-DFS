@@ -5,7 +5,7 @@ namespace ParallelDfs;
 public class SequenceVisitor : IVisitor
 {
     private int _visitedCount;
-
+    
     public Node? FindNodeOrDefault(Tree tree, int nodeValue)
     {
         _visitedCount = 0;
