@@ -26,7 +26,8 @@ public class ParallelVisitorBenchmark
     public Node? FindNodeParallel()
     {
         // Вызов метода для поиска узла в параллельном режиме
-        return _parallelVisitor.FindNodeOrDefault(_tree, _nodeValueToFind);
+        // return _parallelVisitor.FindNodeOrDefault(_tree, _nodeValueToFind);
+        throw new NotImplementedException();
     }
 
     // Добавьте другие методы бенчмарка по мере необходимости
