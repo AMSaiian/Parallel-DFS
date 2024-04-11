@@ -1,42 +1,56 @@
-﻿using ParallelDfs.Data;
+﻿using System.Collections.Concurrent;
+using ParallelDfs.Data;
 using Nito.Collections;
 
 namespace ParallelDfs;
 
 public class ParallelVisitor(int workerDepthLimit) 
 {
-    private volatile int _visitedCount;
-
-    private readonly int _workerDepthLimit = workerDepthLimit;
+    // private volatile int _visitedCount;
+    //
+    // private readonly int _workerDepthLimit = workerDepthLimit;
 
     private volatile bool _found;
 
-    public async Task<Node?> FindNodeOrDefault(Tree tree, int nodeValue)
+    private readonly ReaderWriterLock _locker = new();
+
+    public Node? FindNodeOrDefault(Tree tree, int nodeValue)
     {
-        Node? result = await ProcessSubTree(nodeValue, _workerDepthLimit, tree.Root!);
-        return result;
+        Node? subResult = ProcessSubTree(nodeValue, tree.Root!);
+        
+        return subResult;
     }
     
-    private async Task<Node?> ProcessSubTree(int nodeValue, int depthThreshold, params Node[] subRoot)
+    private Node? ProcessSubTree(int nodeValue, params Node[] subRoot)
     {
         Deque<Node> searchDeque = new();
         
         for (int i = subRoot.Length - 1; i > -1; i--)
             searchDeque.AddToFront(subRoot[i]);
-        
-        List<Task<Node?>> childrenTasks = new();
-        
+
+        List<Task<Node?>> subTasks = new();
         while (searchDeque.Count > 0)
-        {
+        {   
+            // _locker.AcquireReaderLock(int.MaxValue);
             if (_found)
-                return null;
+            {
+                if (subTasks.Count > 0)
+                {
+                    Task<Node?[]> subResults = Task.WhenAll(subTasks);
+                    subResults.Wait();
+            
+                    return Array.Find(subResults.Result, sr => sr is not null);
+                }
+            }
+            // _locker.ReleaseReaderLock();
             
             Node currentNode = searchDeque.RemoveFromFront();
-            Interlocked.Increment(ref _visitedCount);
 
             if (currentNode.Value == nodeValue)
             {
+                // _locker.AcquireWriterLock(int.MaxValue);
                 _found = true;
+                // _locker.ReleaseWriterLock();
                 Console.WriteLine(currentNode.Value);
                 return currentNode;
             }
@@ -47,21 +61,23 @@ public class ParallelVisitor(int workerDepthLimit)
                     searchDeque.AddToFront(currentNode.Children[i]);
             }
             else if (searchDeque.Count > 0 
-                  && searchDeque[^1].Height - searchDeque[^1].Depth > 18)
+                  && searchDeque[^1].Height > 20)
             {
                 Node highestNeighbour = searchDeque.RemoveFromBack();
-                int nextWorkerDepthThreshold = highestNeighbour.Depth + _workerDepthLimit;
                 
-                childrenTasks.Add(Task.Run(() => ProcessSubTree(nodeValue,
-                                                                nextWorkerDepthThreshold,
-                                                                highestNeighbour)));
+                subTasks.Add(Task.Run(() => ProcessSubTree(nodeValue,
+                                                           highestNeighbour)));
             }
         }
 
-        Node?[] results = await Task.WhenAll(childrenTasks);
-
-        Node? result = Array.Find(results, r => r is not null);
-
-        return result;
+        if (subTasks.Count > 0)
+        {
+            Task<Node?[]> subResults = Task.WhenAll(subTasks);
+            subResults.Wait();
+            
+            return Array.Find(subResults.Result, sr => sr is not null);
+        }
+        
+        return null;
     }
 }
