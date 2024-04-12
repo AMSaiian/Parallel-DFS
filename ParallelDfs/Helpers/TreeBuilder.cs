@@ -6,13 +6,10 @@ namespace ParallelDfs.Helpers;
 public static class TreeBuilder
 {
     public static Tree CreateFullTree(IInitializer initializer,
-                                      int depth,
-                                      int childrenAmount)
+                                      int depth)
     {
         if (depth < 1)
             throw new ArgumentException("Depth of tree must be greater than 1", nameof(depth));
-        if (childrenAmount < 2)
-            throw new ArgumentException("Children amount must be greater or equal 2", nameof(childrenAmount));
         
         Queue<Node> initQueue = new();
         
@@ -31,25 +28,25 @@ public static class TreeBuilder
         {
             Node currentNode = initQueue.Dequeue();
 
-            for (int i = 0; i < childrenAmount; i++)
+            currentNode.Left = new()
             {
-                Node newChildren = new()
-                {
-                    Depth = currentNode.Depth + 1,
-                    Height = currentNode.Height - 1,
-                    Value = initializer.GetNextValue()
-                };
-
-                currentNode.Children.Add(newChildren);
-                nodesAmount++;
-            }
+                Depth = currentNode.Depth + 1,
+                Height = currentNode.Height - 1,
+                Value = initializer.GetNextValue()
+            };
+            currentNode.Right = new()
+            {
+                Depth = currentNode.Depth + 1,
+                Height = currentNode.Height - 1,
+                Value = initializer.GetNextValue()
+            };
+            
+            nodesAmount += 2;
 
             if (currentNode.Depth < depth - 1)
             {
-                foreach (Node children in currentNode.Children)
-                {
-                    initQueue.Enqueue(children);
-                }
+                initQueue.Enqueue(currentNode.Left);
+                initQueue.Enqueue(currentNode.Right);
             }
         } while (initQueue.Count > 0);
 

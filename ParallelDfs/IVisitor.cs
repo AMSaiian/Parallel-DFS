@@ -4,5 +4,5 @@ namespace ParallelDfs;
 
 public interface IVisitor
 {
-    Node? FindNodeOrDefault(Tree tree, int nodeValue);
+    Task<Node?> FindNodeOrDefault(Tree tree, int nodeValue);
 }

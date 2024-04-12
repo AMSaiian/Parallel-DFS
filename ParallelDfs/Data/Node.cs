@@ -2,11 +2,13 @@
 
 public class Node
 {
-    public long Value { get; set; }
+    public int Value { get; init; }
     
     public int Height { get; set; }
     
     public int Depth { get; set; }
     
-    public List<Node> Children { get; set; } = [];
+    public Node? Left { get; set; }
+    
+    public Node? Right { get; set; }
 }

@@ -13,7 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
       <PackageReference Include="Nito.Collections.Deque" Version="1.2.1" />
     </ItemGroup>
 

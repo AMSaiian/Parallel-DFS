@@ -1,17 +1,13 @@
 ﻿using System.Diagnostics;
-using ParallelDfs;
 using ParallelDfs.Data;
 using ParallelDfs.Helpers;
+using ParallelDfs.Visitors;
 
-// Console.WriteLine("Hello, World!");
-//
-Tree result = TreeBuilder.CreateFullTree(new SequenceInitializer(), 27, 2);
+Tree result = TreeBuilder.CreateFullTree(new SequenceInitializer(), 24);
 Console.WriteLine("Done");
 var watch = Stopwatch.StartNew();
-// Node? foundedNode = new ParallelVisitor(2).FindNodeOrDefault(result, (int)result.NodesAmount - 1);
-Node? foundedNode = new SequenceVisitor().FindNodeOrDefault(result, (int)result.NodesAmount - 1);
+Node? foundedNode = await new ParallelVisitor(10).FindNodeOrDefault(result, 5434);
+// Node? foundedNode = await new SequenceVisitor().FindNodeOrDefault(result, 5434);
+watch.Stop();
 Console.WriteLine(foundedNode.Value);
 Console.WriteLine(watch.ElapsedMilliseconds);
-// Console.WriteLine("Hello, World!");
-
-// ParallelVisitorBenchmark.Main(null);
