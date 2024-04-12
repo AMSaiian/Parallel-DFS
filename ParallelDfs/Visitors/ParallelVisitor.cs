@@ -3,36 +3,67 @@ using ParallelDfs.Data;
 
 namespace ParallelDfs.Visitors;
 
-public class ParallelVisitor(int childTaskHeight) : IVisitor
+public class ParallelVisitor : IVisitor
 {
+    private int _workersAmount;
+    private readonly int _childTaskHeight = 10;
     private volatile bool _found;
-    private readonly int _childTaskHeight = childTaskHeight;
+    private volatile Node? _result;
     private readonly object _locker = new();
+
+    public int WorkersAmount
+    {
+        get => _workersAmount;
+        set
+        {
+            ThreadPool.GetMinThreads(out int _, out int minIoc);
+            bool minResult = ThreadPool.SetMinThreads(value, minIoc);
+            
+            if (!minResult)
+                throw new InvalidOperationException($"Can't set workers amount with value {value}");
+            
+            _workersAmount = value;
+        }
+    }
+
+    public ParallelVisitor()
+    {
+        ThreadPool.GetMinThreads(out int workersAmount, out _);
+        _workersAmount = workersAmount;
+    }
+
+    public ParallelVisitor(int childTaskHeight, int workersAmount)
+    {
+        _childTaskHeight = childTaskHeight;
+        WorkersAmount = workersAmount;
+    }
 
     public async Task<Node?> FindNodeOrDefault(Tree tree, int nodeValue)
     {
-        Node? subResult = await ProcessSubTree(nodeValue, tree.Root!);
+        _result = default;
+        _found = false;
         
-        return subResult;
+        await ProcessSubTree(nodeValue, tree.Root!);
+        
+        return _result;
     }
     
-    private async Task<Node?> ProcessSubTree(int nodeValue, Node subRoot)
+    private async Task ProcessSubTree(int nodeValue, Node subRoot)
     {
         Deque<Node> searchDeque = new();
         
         searchDeque.AddToFront(subRoot);
 
-        List<Task<Node?>> subTasks = new();
+        List<Task> subTasks = new();
         while (searchDeque.Count > 0)
         {
             switch (_found)
             {
-                case true when subTasks.Count > 0: 
-                    Node?[] subResults = await Task.WhenAll(subTasks); 
-                    return Array.Find(subResults, sr => sr is not null);
-                
+                case true when subTasks.Count > 0:
+                    await Task.WhenAll(subTasks);
+                    return;
                 case true:
-                    return default;
+                    return;
             }
             
             Node currentNode = searchDeque.RemoveFromFront();
@@ -44,11 +75,12 @@ public class ParallelVisitor(int childTaskHeight) : IVisitor
                     if (!_found)
                     {
                         _found = true;
-                        return currentNode;
+                        _result = currentNode;
+                        return;
                     }
                     else
                     {
-                        return null;
+                        return;
                     }
                 }
             }
@@ -59,8 +91,9 @@ public class ParallelVisitor(int childTaskHeight) : IVisitor
             if (currentNode.Left is not null)
                 searchDeque.AddToFront(currentNode.Left);
             
-            while (searchDeque.Count > 0
-             && searchDeque[^1].Height > _childTaskHeight)
+            if (searchDeque.Count > 0
+                && searchDeque[^1].Height > _childTaskHeight
+                && !_found)
             {
                 Node highestNeighbour = searchDeque.RemoveFromBack();
                 
@@ -70,12 +103,8 @@ public class ParallelVisitor(int childTaskHeight) : IVisitor
         }
 
         if (subTasks.Count > 0)
-        {
-            Node?[] subResults = await Task.WhenAll(subTasks);
-            
-            return Array.Find(subResults, sr => sr is not null);
+        { 
+            await Task.WhenAll(subTasks);
         }
-        
-        return null;
     }
 }

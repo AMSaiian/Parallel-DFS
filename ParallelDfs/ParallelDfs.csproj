@@ -9,10 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Result\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Nito.Collections.Deque" Version="1.2.1" />
     </ItemGroup>
 
