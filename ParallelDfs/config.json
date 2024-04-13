@@ -2,5 +2,5 @@
   "IdleIterationsAmount": 20,
   "WorkIterationsAmount": 10,
   "TreeDepth": 20,
-  "ChildTasksHeights": [4, 7, 9, 10, 11, 14]
+  "ChildTasksHeights": [14]
 }
