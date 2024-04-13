@@ -7,13 +7,14 @@ using ParallelDfs.Visitors;
 namespace ParallelDfs;
 
 public class Test(IInitializer initializer,
-                      int searchedValue,
-                      int treeDepth,
-                      int[] childTasksHeights)
+                  int searchedValue,
+                  int treeDepth,
+                  int[] childTasksHeights,
+                  int workIterationsAmount,
+                  int idleIterationsAmount)
 {
-    private static readonly int IdleIterationsAmount = 20;
-    private static readonly int WorkIterationsAmount = 10;
-    
+    private readonly int _workIterationsAmount = workIterationsAmount;
+    private readonly int _idleIterationsAmount = idleIterationsAmount;
     private readonly Tree _testTree = TreeBuilder.CreateFullTree(initializer, treeDepth);
     private readonly int _searchedValue = searchedValue;
     private readonly int[] _childTasksHeights = childTasksHeights;
@@ -39,7 +40,7 @@ public class Test(IInitializer initializer,
     {
         await PerformIdleRuns(visitor);
 
-        for (int i = 0; i < WorkIterationsAmount; i++)
+        for (int i = 0; i < _workIterationsAmount; i++)
         {
             foreach (int childTasksHeight in _childTasksHeights)
             {
@@ -62,7 +63,7 @@ public class Test(IInitializer initializer,
     {
         await PerformIdleRuns(visitor);
 
-        for (int i = 0; i < WorkIterationsAmount; i++)
+        for (int i = 0; i < _workIterationsAmount; i++)
         {
             Stopwatch timer = Stopwatch.StartNew();
             Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
@@ -79,7 +80,7 @@ public class Test(IInitializer initializer,
 
     private async Task PerformIdleRuns(IVisitor visitor)
     {
-        for (int i = 0; i < IdleIterationsAmount; i++)
+        for (int i = 0; i < _idleIterationsAmount; i++)
             await visitor.FindNodeOrDefault(_testTree, _searchedValue);
     }
 }
