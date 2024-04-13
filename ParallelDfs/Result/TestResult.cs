@@ -2,7 +2,7 @@
 
 public class TestResult
 {
-    public List<long> SequenceElapsedTime { get; set; } = [];
+    public List<double> SequenceElapsedTime { get; set; } = [];
     
     public List<ParallelCase> ParallelElapsedTime { get; set; } = [];
     
@@ -13,4 +13,4 @@ public class TestResult
     public int SearchedValue { get; set; }
 }
 
-public record ParallelCase(int WorkersAmount, int ChildTaskHeight, long ElapsedTime);
+public record ParallelCase(int WorkersAmount, int ChildTaskHeight, double ElapsedTime);

@@ -20,7 +20,7 @@ public class Test(IInitializer initializer,
     private readonly int[] _childTasksHeights = childTasksHeights;
     private readonly int[] _workersAmounts = workersAmounts;
     private readonly IVisitor[] _visitors = [ new SequenceVisitor(), new ParallelVisitor() ];
-
+    
     public async Task<TestResult> PerformTest()
     {
         TestResult result = new()
@@ -50,7 +50,7 @@ public class Test(IInitializer initializer,
                     Stopwatch timer = Stopwatch.StartNew();
                     Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
                     timer.Stop();
-                    long elapsedTime = timer.ElapsedMilliseconds;
+                    double elapsedTime = timer.Elapsed.TotalMicroseconds;
                     
                     if (resultNode is null)
                         throw new InvalidOperationException($"Parallel visitor return null. " +
@@ -76,7 +76,7 @@ public class Test(IInitializer initializer,
             if (resultNode is null)
                 throw new InvalidOperationException("Sequence visitor return null");
             
-            long elapsedTime = timer.ElapsedMilliseconds;
+            double elapsedTime = timer.Elapsed.TotalMicroseconds;
                 
             result.SequenceElapsedTime.Add(elapsedTime);
         }

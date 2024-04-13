@@ -55,17 +55,9 @@ public class ParallelVisitor : IVisitor
         searchDeque.AddToFront(subRoot);
 
         List<Task> subTasks = new();
-        while (searchDeque.Count > 0)
+        while (searchDeque.Count > 0 
+            && !_found)
         {
-            switch (_found)
-            {
-                case true when subTasks.Count > 0:
-                    await Task.WhenAll(subTasks);
-                    return;
-                case true:
-                    return;
-            }
-            
             Node currentNode = searchDeque.RemoveFromFront();
 
             if (currentNode.Value == nodeValue)
@@ -76,13 +68,9 @@ public class ParallelVisitor : IVisitor
                     {
                         _found = true;
                         _result = currentNode;
-                        return;
-                    }
-                    else
-                    {
-                        return;
                     }
                 }
+                break;
             }
             
             if (currentNode.Right is not null)
