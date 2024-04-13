@@ -9,8 +9,7 @@ namespace ParallelDfs;
 public class Test(IInitializer initializer,
                       int searchedValue,
                       int treeDepth,
-                      int[] childTasksHeights,
-                      int[] workersAmounts)
+                      int[] childTasksHeights)
 {
     private static readonly int IdleIterationsAmount = 20;
     private static readonly int WorkIterationsAmount = 10;
@@ -18,7 +17,6 @@ public class Test(IInitializer initializer,
     private readonly Tree _testTree = TreeBuilder.CreateFullTree(initializer, treeDepth);
     private readonly int _searchedValue = searchedValue;
     private readonly int[] _childTasksHeights = childTasksHeights;
-    private readonly int[] _workersAmounts = workersAmounts;
     private readonly IVisitor[] _visitors = [ new SequenceVisitor(), new ParallelVisitor() ];
     
     public async Task<TestResult> PerformTest()
@@ -27,7 +25,8 @@ public class Test(IInitializer initializer,
         {
             NodesAmount = _testTree.NodesAmount, 
             TreeHeight = _testTree.Root.Height, 
-            SearchedValue = _searchedValue
+            SearchedValue = _searchedValue,
+            WorkersAmount = Environment.ProcessorCount
         };
 
         await PerformSequenceVisitorTest(_visitors[0] as SequenceVisitor, result);
@@ -42,23 +41,19 @@ public class Test(IInitializer initializer,
 
         for (int i = 0; i < WorkIterationsAmount; i++)
         {
-            foreach (int workersAmount in _workersAmounts)
+            foreach (int childTasksHeight in _childTasksHeights)
             {
-                visitor.WorkersAmount = workersAmount;
-                foreach (int childTasksHeight in _childTasksHeights)
-                {
-                    Stopwatch timer = Stopwatch.StartNew();
-                    Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
-                    timer.Stop();
-                    double elapsedTime = timer.Elapsed.TotalMicroseconds;
-                    
-                    if (resultNode is null)
-                        throw new InvalidOperationException($"Parallel visitor return null. " +
-                                                            $"Workers amount:{workersAmount}, " +
-                                                            $"child task height:{childTasksHeight}");
+                visitor.ChildTaskHeight = childTasksHeight;
+                Stopwatch timer = Stopwatch.StartNew();
+                Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
+                timer.Stop();
+                double elapsedTime = timer.Elapsed.TotalMicroseconds;
                 
-                    result.ParallelElapsedTime.Add(new(workersAmount, childTasksHeight, elapsedTime));
-                }
+                if (resultNode is null)
+                    throw new InvalidOperationException($"Parallel visitor return null. " +
+                                                        $"child task height:{childTasksHeight}");
+            
+                result.ParallelElapsedTime.Add(new(childTasksHeight, elapsedTime));
             }
         }
     }

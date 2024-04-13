@@ -11,6 +11,8 @@ public class TestResult
     public int NodesAmount { get; set; }
     
     public int SearchedValue { get; set; }
+    
+    public int WorkersAmount { get; set; }
 }
 
-public record ParallelCase(int WorkersAmount, int ChildTaskHeight, double ElapsedTime);
+public record ParallelCase(int ChildTaskHeight, double ElapsedTime);
