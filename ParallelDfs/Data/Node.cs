@@ -11,4 +11,9 @@ public class Node
     public Node? Left { get; set; }
     
     public Node? Right { get; set; }
+
+    public override string ToString()
+    {
+        return $"Node with value: {Value} - height: {Height} - depth: {Depth}";
+    }
 }

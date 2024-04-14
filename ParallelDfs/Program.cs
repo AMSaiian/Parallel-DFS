@@ -11,13 +11,28 @@ Configuration configuration = await JsonSerializer.DeserializeAsync<Configuratio
 Test test = new(new SequenceInitializer(), 
                 configuration!.SearchedValue, 
                 configuration.TreeDepth, 
-                configuration.ChildTasksHeights, 
                 configuration.WorkIterationsAmount, 
-                configuration.IdleIterationsAmount);
+                configuration.IdleIterationsAmount, 
+                configuration.MustExist);
 
-TestResult testResult = await test.PerformTest();
+TestResultBase? testResult;
 
-string reportPath = $"Reports/{DateTime.Now.ToFileTime()}.json";
+switch (configuration.TestVariant)
+{
+    case Configuration.SequenceTest:
+        testResult = await test.SequenceTest();
+        break;
+    case Configuration.ParallelTest:
+        testResult = await test.ParallelTest(configuration.ChildTasksHeights);
+        break;
+    case Configuration.FullTest:
+        testResult = await test.FullTest(configuration.ChildTasksHeights);
+        break;
+    default:
+        throw new ArgumentException("Invalid test scenario provided");
+}
+
+string reportPath = $"Reports/{testResult.GetType().Name}.{DateTime.Now.ToFileTime()}.json";
 var options = new JsonSerializerOptions{ WriteIndented = true };
 await using FileStream reportStream = File.Create(reportPath);
 await JsonSerializer.SerializeAsync(reportStream, testResult, options);

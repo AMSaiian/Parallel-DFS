@@ -4,24 +4,23 @@ namespace ParallelDfs;
 
 public class Configuration
 {
-    private int _treeDepth;
+    public const int SequenceTest = 0;
+    
+    public const int ParallelTest = 1;
+
+    public const int FullTest = 2;
     
     public int IdleIterationsAmount { get; set; }
     
     public int WorkIterationsAmount { get; set; }
 
-    public int TreeDepth
-    {
-        get => _treeDepth;
-        set
-        {
-            _treeDepth = value;
-            SearchedValue = (int)Math.Pow(2, _treeDepth + 1) - 2;
-        }
-    }
+    public int TreeDepth { get; set; }
 
     public int[] ChildTasksHeights { get; set; } = [];
-
-    [JsonIgnore]
-    public int SearchedValue { get; private set; }
+    
+    public int SearchedValue { get; set; }
+    
+    public bool MustExist { get; set; }
+    
+    public int TestVariant { get; set; }
 }
