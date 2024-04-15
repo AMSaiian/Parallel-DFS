@@ -13,7 +13,8 @@ Test test = new(new SequenceInitializer(),
                 configuration.TreeDepth, 
                 configuration.WorkIterationsAmount, 
                 configuration.IdleIterationsAmount, 
-                configuration.MustExist);
+                configuration.MustExist, 
+                configuration.WithConsoleOutput);
 
 TestResultBase? testResult;
 

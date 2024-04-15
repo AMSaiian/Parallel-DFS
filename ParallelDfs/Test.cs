@@ -11,13 +11,15 @@ public class Test(IInitializer initializer,
                   int treeDepth,
                   int workIterationsAmount,
                   int idleIterationsAmount,
-                  bool mustExist)
+                  bool mustExist,
+                  bool withConsoleOutput)
 {
     private readonly int _workIterationsAmount = workIterationsAmount;
     private readonly int _idleIterationsAmount = idleIterationsAmount;
     private readonly Tree _testTree = TreeBuilder.CreateFullTree(initializer, treeDepth);
     private readonly int _searchedValue = searchedValue;
     private readonly bool _mustExist = mustExist;
+    private readonly bool _withConsoleOutput = withConsoleOutput;
     private readonly IVisitor[] _visitors = [ new SequenceVisitor(), new ParallelVisitor() ];
     
     public async Task<FullTestResult> FullTest(int[] childTasksHeights)
@@ -38,7 +40,10 @@ public class Test(IInitializer initializer,
             await PerformParallelVisitorTest(_visitors[1] as ParallelVisitor, childTasksHeights);
 
         result.ParallelElapsedTime = parallelResult.ElapsedTime;
+        result.ParallelMeanElapsedTime = parallelResult.MeanElapsedTime;
+        
         result.SequenceElapsedTime = sequenceResult.ElapsedTime;
+        result.SequenceMeanElapsedTime = sequenceResult.MeanElapsedTime;
         
         return result;
     }
@@ -77,16 +82,29 @@ public class Test(IInitializer initializer,
                 timer.Stop();
                 double elapsedTime = timer.Elapsed.TotalMicroseconds;
                 
-                if (resultNode is null && _mustExist)
-                    throw new InvalidOperationException($"Parallel visitor return null. " +
+                if (!await IsResultCorrect(resultNode))
+                    throw new InvalidOperationException($"Parallel visitor return invalid result. " +
                                                         $"child task height:{childTasksHeight}");
-                else
-                    Console.WriteLine("Parallel DFS found: " + resultNode!);
                 
-            
+                switch (_withConsoleOutput)
+                {
+                    case true when resultNode is not null:
+                        Console.WriteLine("Parallel DFS found: " + resultNode);
+                        break;
+                    case true when resultNode is null:
+                        Console.WriteLine($"Parallel DFS doesn't found node with value {_searchedValue} as expected");
+                        break;
+                }
+                
                 result.ElapsedTime.Add(new(childTasksHeight, elapsedTime));
             }
         }
+
+        result.MeanElapsedTime = result.ElapsedTime
+                                       .GroupBy(execCase => execCase.ChildTaskHeight)
+                                       .Select(group => new ParallelCase(group.Key, 
+                                                                         group.Average(elem => elem.ElapsedTime)))
+                                       .ToList();
 
         return result;
     }
@@ -109,16 +127,26 @@ public class Test(IInitializer initializer,
             Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
             timer.Stop();
             
-            if (resultNode is null && _mustExist)
-                throw new InvalidOperationException("Sequence visitor return null");
-            else
-                Console.WriteLine("Sequence DFS found: " + resultNode!);
+            if (!await IsResultCorrect(resultNode))
+                throw new InvalidOperationException("Sequence visitor return invalid result");
+            
+            switch (_withConsoleOutput)
+            {
+                case true when resultNode is not null:
+                    Console.WriteLine("Sequence DFS found: " + resultNode);
+                    break;
+                case true when resultNode is null:
+                    Console.WriteLine($"Sequence DFS doesn't found node with value {_searchedValue} as expected");
+                    break;
+            }
             
             double elapsedTime = timer.Elapsed.TotalMicroseconds;
                 
             result.ElapsedTime.Add(elapsedTime);
         }
 
+        result.MeanElapsedTime = result.ElapsedTime.Average();
+        
         return result;
     }
 
@@ -126,5 +154,12 @@ public class Test(IInitializer initializer,
     {
         for (int i = 0; i < _idleIterationsAmount; i++)
             await visitor.FindNodeOrDefault(_testTree, _searchedValue);
+    }
+
+    private Task<bool> IsResultCorrect(Node? resultNode)
+    {
+        bool result = _mustExist == resultNode is not null;
+
+        return Task.FromResult(result);
     }
 }

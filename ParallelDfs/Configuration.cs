@@ -23,4 +23,6 @@ public class Configuration
     public bool MustExist { get; set; }
     
     public int TestVariant { get; set; }
+    
+    public bool WithConsoleOutput { get; set; }
 }
