@@ -1,9 +1,10 @@
 {
   "IdleIterationsAmount": 20,
-  "WorkIterationsAmount": 1,
+  "WorkIterationsAmount": 10,
   "TreeDepth": 20,
   "SearchedValue": 2097150,
   "MustExist": true,
-  "TestVariant": 2,
-  "ChildTasksHeights": [14]
+  "TestVariant": 1,
+  "ChildTasksHeights": [11],
+  "WithConsoleOutput": false
 }

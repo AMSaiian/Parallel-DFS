@@ -21,30 +21,30 @@ public class Test(IInitializer initializer,
     private readonly bool _mustExist = mustExist;
     private readonly bool _withConsoleOutput = withConsoleOutput;
     private readonly IVisitor[] _visitors = [ new SequenceVisitor(), new ParallelVisitor() ];
-    
+
     public async Task<FullTestResult> FullTest(int[] childTasksHeights)
     {
         FullTestResult result = new()
         {
-            NodesAmount = _testTree.NodesAmount, 
-            TreeHeight = _testTree.Root.Height, 
+            NodesAmount = _testTree.NodesAmount,
+            TreeHeight = _testTree.Root.Height,
             SearchedValue = _searchedValue,
             MustExist = _mustExist,
             WorkersAmount = Environment.ProcessorCount
         };
 
-        SequenceTestResult sequenceResult = 
+        SequenceTestResult sequenceResult =
             await PerformSequenceVisitorTest(_visitors[0] as SequenceVisitor);
-        
-        ParallelTestResult parallelResult = 
+
+        ParallelTestResult parallelResult =
             await PerformParallelVisitorTest(_visitors[1] as ParallelVisitor, childTasksHeights);
 
         result.ParallelElapsedTime = parallelResult.ElapsedTime;
         result.ParallelMeanElapsedTime = parallelResult.MeanElapsedTime;
-        
+
         result.SequenceElapsedTime = sequenceResult.ElapsedTime;
         result.SequenceMeanElapsedTime = sequenceResult.MeanElapsedTime;
-        
+
         return result;
     }
 
@@ -58,7 +58,7 @@ public class Test(IInitializer initializer,
         return await PerformParallelVisitorTest(_visitors[1] as ParallelVisitor, childTasksHeights);
     }
 
-    private async Task<ParallelTestResult> PerformParallelVisitorTest(ParallelVisitor visitor, 
+    private async Task<ParallelTestResult> PerformParallelVisitorTest(ParallelVisitor visitor,
                                                                       int[] childTasksHeights)
     {
         await PerformIdleRuns(visitor);
@@ -81,11 +81,11 @@ public class Test(IInitializer initializer,
                 Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
                 timer.Stop();
                 double elapsedTime = timer.Elapsed.TotalMicroseconds;
-                
+
                 if (!await IsResultCorrect(resultNode))
                     throw new InvalidOperationException($"Parallel visitor return invalid result. " +
                                                         $"child task height:{childTasksHeight}");
-                
+
                 switch (_withConsoleOutput)
                 {
                     case true when resultNode is not null:
@@ -95,16 +95,16 @@ public class Test(IInitializer initializer,
                         Console.WriteLine($"Parallel DFS doesn't found node with value {_searchedValue} as expected");
                         break;
                 }
-                
+
                 result.ElapsedTime.Add(new(childTasksHeight, elapsedTime));
             }
         }
 
         result.MeanElapsedTime = result.ElapsedTime
-                                       .GroupBy(execCase => execCase.ChildTaskHeight)
-                                       .Select(group => new ParallelCase(group.Key, 
-                                                                         group.Average(elem => elem.ElapsedTime)))
-                                       .ToList();
+            .GroupBy(execCase => execCase.ChildTaskHeight)
+            .Select(group => new ParallelCase(group.Key,
+                                              group.Average(elem => elem.ElapsedTime)))
+            .ToList();
 
         return result;
     }
@@ -112,7 +112,7 @@ public class Test(IInitializer initializer,
     private async Task<SequenceTestResult> PerformSequenceVisitorTest(SequenceVisitor visitor)
     {
         await PerformIdleRuns(visitor);
-        
+
         SequenceTestResult result = new()
         {
             SearchedValue = _searchedValue,
@@ -126,10 +126,10 @@ public class Test(IInitializer initializer,
             Stopwatch timer = Stopwatch.StartNew();
             Node? resultNode = await visitor.FindNodeOrDefault(_testTree, _searchedValue);
             timer.Stop();
-            
+
             if (!await IsResultCorrect(resultNode))
                 throw new InvalidOperationException("Sequence visitor return invalid result");
-            
+
             switch (_withConsoleOutput)
             {
                 case true when resultNode is not null:
@@ -139,14 +139,14 @@ public class Test(IInitializer initializer,
                     Console.WriteLine($"Sequence DFS doesn't found node with value {_searchedValue} as expected");
                     break;
             }
-            
+
             double elapsedTime = timer.Elapsed.TotalMicroseconds;
-                
+
             result.ElapsedTime.Add(elapsedTime);
         }
 
         result.MeanElapsedTime = result.ElapsedTime.Average();
-        
+
         return result;
     }
 
